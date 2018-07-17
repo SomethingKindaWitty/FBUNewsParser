@@ -7,6 +7,7 @@ nltk.download('punkt')
 @app.route("/getArticle", methods=["POST"])
 def hello():
     data = request.json
+    print(request)
     print(data)
     url = data["url"]
     article = Article(url)
