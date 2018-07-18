@@ -19,15 +19,41 @@ def hello():
     article.download()
     article.parse()
     article.nlp()
+    articleText = article.text
+
+    uncleanedcategories = classify_text(articleText)
+    mostLikely = uncleanedcategories[0].name
+    index = mostLikely.rindex("/")+1
+    mostLikely = mostLikely[index:]
+
     returnData = {
-        "text": article.text,
-        "keywords": article.keywords
+        "text": articleText,
+        "keywords": article.keywords,
+        "category": mostLikely
     }
+
     # cnn_paper = newspaper.build('http://cnn.com')
     # for article in cnn_paper.articles:
     #     print(article.url)
 
     return jsonify(returnData)
+
+
+@app.route("/getClassification", methods=["POST"])
+def classify():
+    data = request.json
+    url = data["url"]
+    article = Article(url)
+    article.download()
+    article.parse()
+
+    categories = classify_text(article.text)
+    for category in categories:
+        print(u'=' * 20)
+        print(u'{:<16}: {}'.format('name', category.name))
+        print(u'{:<16}: {}'.format('confidence', category.confidence))
+    return "success"
+
 
 @app.route("/test")
 def test():
@@ -48,3 +74,16 @@ def test():
     print('Text: {}'.format(text))
     print('Sentiment: {}, {}'.format(sentiment.score, sentiment.magnitude))
     return 'Sentiment: {}, {}'.format(sentiment.score, sentiment.magnitude)
+
+
+def classify_text(text):
+    """Classifies content categories of the provided text."""
+    client = language.LanguageServiceClient()
+
+    document = types.Document(
+        content=text,
+        type=enums.Document.Type.PLAIN_TEXT)
+
+    categories = client.classify_text(document).categories
+
+    return categories
