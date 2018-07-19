@@ -6,6 +6,9 @@ import nltk
 from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
+from bs4 import BeautifulSoup
+
+import requests
 
 app = Flask(__name__)
 nltk.download('punkt')
@@ -55,25 +58,24 @@ def classify():
     return "success"
 
 
-@app.route("/test")
-def test():
-    # Imports the Google Cloud client library
+@app.route("/sources")
+def sources():
+    url = "https://newsapi.org/sources"
+    r = requests.get(url)
+    data = r.text
+    soup = BeautifulSoup(data, 'lxml')
+    list = soup.find_all("kbd")
+    sources = []
+    keepTrack = False
+    for tag in list:
+        text = tag.string
+        if text == 'abc-news':
+            keepTrack = True
+        if keepTrack:
+            sources.append(text)
 
-    # Instantiates a client
-    client = language.LanguageServiceClient()
+    return jsonify(sources)
 
-    # The text to analyze
-    text = u'Hello, world!'
-    document = types.Document(
-        content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
-
-    # Detects the sentiment of the text
-    sentiment = client.analyze_sentiment(document=document).document_sentiment
-
-    print('Text: {}'.format(text))
-    print('Sentiment: {}, {}'.format(sentiment.score, sentiment.magnitude))
-    return 'Sentiment: {}, {}'.format(sentiment.score, sentiment.magnitude)
 
 
 def classify_text(text):
