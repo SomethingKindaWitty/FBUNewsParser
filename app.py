@@ -42,22 +42,6 @@ def hello():
     return jsonify(returnData)
 
 
-@app.route("/getClassification", methods=["POST"])
-def classify():
-    data = request.json
-    url = data["url"]
-    article = Article(url)
-    article.download()
-    article.parse()
-
-    categories = classify_text(article.text)
-    for category in categories:
-        print(u'=' * 20)
-        print(u'{:<16}: {}'.format('name', category.name))
-        print(u'{:<16}: {}'.format('confidence', category.confidence))
-    return "success"
-
-
 @app.route("/sources")
 def sources():
     url = "https://newsapi.org/sources"
@@ -73,7 +57,6 @@ def sources():
             keepTrack = True
         if keepTrack:
             sources.append(text)
-
     return jsonify(sources)
 
 
