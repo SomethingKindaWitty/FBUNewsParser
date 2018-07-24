@@ -1,6 +1,6 @@
 from flask import Flask, json, request, jsonify, g
-from newspaper import Article
 import newspaper
+from newspaper import Article
 import nltk
 import sqlite3
 
@@ -64,17 +64,71 @@ def sources():
             sources.append(text)
     return jsonify(sources)
 
-@app.route("/register", methods=["POST"])
+#@app.route("/register", methods=["POST"])
+#def register():
+#    # References
+#    # sqlite: https://docs.python.org/2/library/sqlite3.html
+#    # Flask: http://flask.pocoo.org/docs/1.0/patterns/sqlite3/
+#    # DB browser: https://sqlitebrowser.org/
+#
+#
+#    # must run this command before making any SQLITE commands
+#    cur = get_db().cursor()
+#
+#    # gets data from request
+#    data = request.json
+#    print(data)
+#
+#    # gets the username from the data
+#    username = data["username"]
+#    password = data["password"]
+#
+#    # executes a SQL query
+#    cur.execute('INSERT INTO Users (Username, Password) VALUES (?,?)', (username, password))
+#
+#    #saves the results of the query
+#    get_db().commit()
+#
+#    #returns the user
+#    return jsonify(data)
+
+@app.route("/login", methods=["POST"])
 def register():
-    # References
-    # sqlite: https://docs.python.org/2/library/sqlite3.html
-    # Flask: http://flask.pocoo.org/docs/1.0/patterns/sqlite3/
-    # DB browser: https://sqlitebrowser.org/
+    c = get_db().cursor()
 
+    # gets data from request
+    data = request.json
+    print(data)
+    
+    # gets the username from the data
+    username = data["username"]
+    password = data["password"]
+    
+    user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+    if (user is None):
+        dict = {"UID":-1}
+        print("User doesn't exist")
+    else:
+        dict = {"UID":user[0]}
+        print("User exists")
+    print(user)
+    print(dict)
+    
+    # saves the results of the query
+    get_db().commit()
+    # closes database access
+    get_db().close()
+    
+    # returns the user
+    return jsonify(dict)
 
-    # must run this command before making any SQLITE commands
-    cur = get_db().cursor()
-
+@app.route("/signin", methods=["POST"])
+def create():
+    # user doesn't exist, is assumed to be false
+    condition = False;
+    # create cursor into database
+    c = get_db().cursor()
+    
     # gets data from request
     data = request.json
     print(data)
@@ -83,15 +137,32 @@ def register():
     username = data["username"]
     password = data["password"]
 
-    # executes a SQL query
-    cur.execute('INSERT INTO Users (Username, Password) VALUES (?,?)', (username, password))
-
-    #saves the results of the query
+    # make sure table exists
+    c.execute('''CREATE TABLE IF NOT EXISTS Users (id INT PRIMARY KEY, username TEXT, password TEXT, image TEXT, categories TEXT, political_preference INTEGER, num_upvoted INTEGER)''')
+    
+    # check to see if user is already in table
+    user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+    if (user is None):
+        # user truly doesn't exist, sign them up
+        condition = True
+        c.execute('''INSERT INTO Users (username, password, image,categories, political_preference, num_upvoted)
+              VALUES(?,?,?,?,?,?)''', (username, password, None, None, None, None))
+        print('User inserted')
+        user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+        print(user)
+    # saves the results of the query
     get_db().commit()
-
-    #returns the user
-    return jsonify(data)
-
+    # closes database access
+    get_db().close()
+    
+    # if the user did not already exist, sign them up
+    if (condition):
+        dict = {"UID":user[0]}
+        return dict
+    print("User already existed")
+    dict = {"UID":-1}
+    print(dict)
+    return jsonify(dict)
 
 def classify_text(text):
     """Classifies content categories of the provided text."""
