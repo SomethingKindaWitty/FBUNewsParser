@@ -1,6 +1,7 @@
 from flask import Flask, json, request, jsonify, g
 import newspaper
 from newspaper import Article
+import newspaper
 import nltk
 import sqlite3
 
