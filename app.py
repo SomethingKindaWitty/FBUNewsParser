@@ -66,14 +66,30 @@ def sources():
 
 @app.route("/register", methods=["POST"])
 def register():
+    # References
+    # sqlite: https://docs.python.org/2/library/sqlite3.html
+    # Flask: http://flask.pocoo.org/docs/1.0/patterns/sqlite3/
+    # DB browser: https://sqlitebrowser.org/
+
+
+    # must run this command before making any SQLITE commands
     cur = get_db().cursor()
+
+    # gets data from request
     data = request.json
     print(data)
+
+    # gets the username from the data
     username = data["username"]
     password = data["password"]
+
+    # executes a SQL query
     cur.execute('INSERT INTO Users (Username, Password) VALUES (?,?)', (username, password))
+
+    #saves the results of the query
     get_db().commit()
-    #put the thing into the register
+
+    #returns the user
     return jsonify(data)
 
 
