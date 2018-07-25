@@ -312,10 +312,12 @@ def set_aff():
         get_db().close()
         dict = {}
         dict["isSet"] = True
+        dict["UID"] = uid
         return jsonify(dict)
     except:
         dict = {}
         dict["isSet"] = False
+        dict["UID"] = -1
         return jsonify(dict)
     
 @app.route("/user", methods=["POST"])
