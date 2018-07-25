@@ -287,7 +287,37 @@ def update_delete():
         dict = {}
         dict["isLiked"] = False
         return jsonify(dict)
-#    
+
+@app.route("/setaff", methods=["POST"])
+def set_aff():
+    try:
+        # create cursor into database
+        c = get_db().cursor()
+        
+        # gets data from request
+        data = request.json
+        print(data)
+        
+        # get required fields
+        uid = data["UID"]
+        num_pol = data["aff"]
+        num_vote = 10
+        
+        # update user
+        c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote, uid))
+        c.execute('''UPDATE User SET political_preference=? WHERE id=?''', (num_pol, uid))
+        # saves the results of the query
+        get_db().commit()
+        # closes database access
+        get_db().close()
+        dict = {}
+        dict["isSet"] = True
+        return jsonify(dict)
+    except:
+        dict = {}
+        dict["isSet"] = False
+        return jsonify(dict)
+    
 @app.route("/user", methods=["POST"])
 def get_user():
 
