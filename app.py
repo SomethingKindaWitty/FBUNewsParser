@@ -65,34 +65,6 @@ def sources():
             sources.append(text)
     return jsonify(sources)
 
-#@app.route("/register", methods=["POST"])
-#def register():
-#    # References
-#    # sqlite: https://docs.python.org/2/library/sqlite3.html
-#    # Flask: http://flask.pocoo.org/docs/1.0/patterns/sqlite3/
-#    # DB browser: https://sqlitebrowser.org/
-#
-#
-#    # must run this command before making any SQLITE commands
-#    cur = get_db().cursor()
-#
-#    # gets data from request
-#    data = request.json
-#    print(data)
-#
-#    # gets the username from the data
-#    username = data["username"]
-#    password = data["password"]
-#
-#    # executes a SQL query
-#    cur.execute('INSERT INTO Users (Username, Password) VALUES (?,?)', (username, password))
-#
-#    #saves the results of the query
-#    get_db().commit()
-#
-#    #returns the user
-#    return jsonify(data)
-
 def classify_text(text):
     """Classifies content categories of the provided text."""
     client = language.LanguageServiceClient()
@@ -104,6 +76,11 @@ def classify_text(text):
     categories = client.classify_text(document).categories
 
     return categories
+
+#    # References
+#    # sqlite: https://docs.python.org/2/library/sqlite3.html
+#    # Flask: http://flask.pocoo.org/docs/1.0/patterns/sqlite3/
+#    # DB browser: https://sqlitebrowser.org/
 
 @app.route("/login", methods=["POST"])
 def register():
@@ -149,20 +126,21 @@ def create():
     # gets the username from the data
     username = data["username"]
     password = data["password"]
-
+    
     # make sure table exists
     c.execute('''CREATE TABLE IF NOT EXISTS User (id INT PRIMARY KEY, username TEXT, password TEXT, image TEXT, categories TEXT, political_preference REAL, num_upvoted INTEGER)''')
-    
+
     # check to see if user is already in table
     user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
+
     if (user is None):
         # user truly doesn't exist, sign them up
         condition = True
         c.execute('''INSERT INTO User (username, password, image,categories, political_preference, num_upvoted)
-              VALUES(?,?,?,?,?,?)''', (username, password, None, None, None, None))
-        print('User inserted')
+          VALUES(?,?,?,?,?,?)''', (username, password, None, None, None, None))
         user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
         print(user)
+        
     # saves the results of the query
     get_db().commit()
     # closes database access
@@ -171,7 +149,7 @@ def create():
     # if the user did not already exist, sign them up
     if (condition):
         dict = {"UID":user[0]}
-        return dict
+        return jsonify(dict)
     print("User already existed")
     dict = {"UID":-1}
     print(dict)
@@ -180,34 +158,53 @@ def create():
 @app.route("/like", methods=["POST"])
 def update_post():
     try:
-        # create cursor into database
+        #create cursor into database
         c = get_db().cursor()
-        
+
         # gets data from request
         data = request.json
-        print(data)
-        
+  
         # get required fields
         url = data["url"]
         uid = data["UID"]
         poly_bias = data["bias"] 
-        
+
         # create table if it doesn't exist
         c.execute('''CREATE TABLE IF NOT EXISTS Likes (id INT PRIMARY KEY, url TEXT, 
                 uid INTEGER)''')
+        # saves the results of the query
+        get_db().commit()
+        
         
         # add like to table
         c.execute('''INSERT INTO Likes (url, uid)
                   VALUES(?,?)''', (url, uid))
-        
+        # saves the results of the query
+        get_db().commit()
+    
         # get user
-        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid,)).fetchone();
+        # saves the results of the query
+        get_db().commit()
+        
         num_vote = user[6]
         num_pol = user[5]
         
+        if (num_vote is None):
+            num_vote = 0
+        if (num_pol is None):
+            num_pol = 0
+        
         # update user
         c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote+1 , uid))
+        # saves the results of the query
+        get_db().commit()
         c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote+1) , uid))
+        # saves the results of the query
+        get_db().commit()
+        # closes database access
+        get_db().close()
+    
         dict = {}
         dict["isLiked"] = True
         return jsonify(dict)
@@ -215,7 +212,8 @@ def update_post():
         dict = {}
         dict["isLiked"] = False
         return jsonify(dict)
-@app.route("/like", methods=["GET"])
+    
+@app.route("/getlike", methods=["POST"])
 def update_get():
     # create cursor into database
     c = get_db().cursor()
@@ -228,8 +226,13 @@ def update_get():
     uid = data["UID"]
     url = data["url"]
     
-    # get all posts that have been liked by the user
-    post = c.execute('''SELECT * FROM Likes WHERE id=? AND url=?''',(uid, url))
+    # see if the post been liked by the user
+    post = c.execute('''SELECT * FROM Likes WHERE uid=? AND url=?''',(uid, url)).fetchone()
+
+    # saves the results of the query
+    get_db().commit()
+    # closes database access
+    get_db().close()
     dict = {}
     if (post is None):
         dict["isLiked"]= False
@@ -253,17 +256,30 @@ def update_delete():
         uid = data["UID"]
         poly_bias = data["bias"]
         
-        # remove like from table
-        c.execute('''DELETE FROM Likes WHERE url=? AND uid=?''', (url, uid))
+        try:
+            # remove like from table
+            c.execute('''DELETE FROM Likes WHERE url=? AND uid=?''', (url, uid))
+        except:
+            return jsonify({"failure":"no delete"})
         
         # get user
-        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid,)).fetchone();
         num_vote = user[6]
         num_pol = user[5]
         
-        # update user
-        c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote-1 , uid))
-        c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote-1) , uid))
+        if ((num_vote-1) == 0):
+            # update user
+            c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (0 , uid))
+            c.execute('''UPDATE User SET political_preference=? WHERE id=?''', (0, uid))
+        else:
+            # update user
+            c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote-1 , uid))
+            c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote-1) , uid))
+            
+        # saves the results of the query
+        get_db().commit()
+        # closes database access
+        get_db().close()
         dict = {}
         dict["isLiked"] = True
         return jsonify(dict)
@@ -271,9 +287,10 @@ def update_delete():
         dict = {}
         dict["isLiked"] = False
         return jsonify(dict)
-    
-@app.route("/user", methods=["GET"])
+#    
+@app.route("/user", methods=["POST"])
 def get_user():
+
     # create cursor into database
     c = get_db().cursor()
     
@@ -285,8 +302,13 @@ def get_user():
     uid = data["UID"]
     
     # get user
-    user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+    user = c.execute('''SELECT * FROM User WHERE id= ?''',(uid,)).fetchone();
     
+    # saves the results of the query
+    get_db().commit()
+    # closes database access
+    get_db().close()
+
     #turn user into dictionary
     names = ["UID","username", "password", "url" ,"categories", "politicalPreference", "numUpvoted"]
     dict = {}
