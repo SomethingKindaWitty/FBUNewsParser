@@ -208,9 +208,13 @@ def update_post():
         # update user
         c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote+1 , uid))
         c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote+1) , uid))
-        return True
+        dict = {}
+        dict["isLiked"] = True
+        return jsonify(dict)
     except:
-        return False
+        dict = {}
+        dict["isLiked"] = False
+        return jsonify(dict)
 @app.route("/like", methods=["GET"])
 def update_get():
     # create cursor into database
@@ -222,15 +226,16 @@ def update_get():
     
     # get required fields
     uid = data["UID"]
+    url = data["url"]
     
     # get all posts that have been liked by the user
-    posts = c.execute('''SELECT * FROM Likes WHERE id=?''',(uid))
-    i = 0
+    post = c.execute('''SELECT * FROM Likes WHERE id=? AND url=?''',(uid, url))
     dict = {}
-    for post in posts:
-        dict[str(i)] = post[1]
-        i += 1
-    
+    if (post is None):
+        dict["isLiked"]= False
+    else:
+        dict["isLiked"]= True
+   
     return jsonify(dict)
     
 @app.route("/like", methods=["DELETE"])
@@ -259,9 +264,13 @@ def update_delete():
         # update user
         c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote-1 , uid))
         c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote-1) , uid))
-        return True
+        dict = {}
+        dict["isLiked"] = True
+        return jsonify(dict)
     except:
-        return False
+        dict = {}
+        dict["isLiked"] = False
+        return jsonify(dict)
     
 @app.route("/user", methods=["GET"])
 def get_user():
@@ -279,13 +288,12 @@ def get_user():
     user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
     
     #turn user into dictionary
-    names = ["UID","Username", "Password", "URL" ,"Categories", "PoliticalPreference", "NumUpvoted"]
+    names = ["UID","username", "password", "url" ,"categories", "politicalPreference", "numUpvoted"]
     dict = {}
     i=0
     for item in user:
         dict[names[i]] = item
         i += 1
-    
     return jsonify(dict)
 
 def get_db():
