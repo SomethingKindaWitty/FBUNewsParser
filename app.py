@@ -93,6 +93,18 @@ def sources():
 #    #returns the user
 #    return jsonify(data)
 
+def classify_text(text):
+    """Classifies content categories of the provided text."""
+    client = language.LanguageServiceClient()
+
+    document = types.Document(
+        content=text,
+        type=enums.Document.Type.PLAIN_TEXT)
+
+    categories = client.classify_text(document).categories
+
+    return categories
+
 @app.route("/login", methods=["POST"])
 def register():
     c = get_db().cursor()
@@ -105,7 +117,7 @@ def register():
     username = data["username"]
     password = data["password"]
     
-    user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+    user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
     if (user is None):
         dict = {"UID":-1}
         print("User doesn't exist")
@@ -139,17 +151,17 @@ def create():
     password = data["password"]
 
     # make sure table exists
-    c.execute('''CREATE TABLE IF NOT EXISTS Users (id INT PRIMARY KEY, username TEXT, password TEXT, image TEXT, categories TEXT, political_preference INTEGER, num_upvoted INTEGER)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS User (id INT PRIMARY KEY, username TEXT, password TEXT, image TEXT, categories TEXT, political_preference REAL, num_upvoted INTEGER)''')
     
     # check to see if user is already in table
-    user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+    user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
     if (user is None):
         # user truly doesn't exist, sign them up
         condition = True
-        c.execute('''INSERT INTO Users (username, password, image,categories, political_preference, num_upvoted)
+        c.execute('''INSERT INTO User (username, password, image,categories, political_preference, num_upvoted)
               VALUES(?,?,?,?,?,?)''', (username, password, None, None, None, None))
         print('User inserted')
-        user = c.execute('SELECT * FROM Users WHERE username=? AND password=?', (username, password)).fetchone();
+        user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
         print(user)
     # saves the results of the query
     get_db().commit()
@@ -165,17 +177,124 @@ def create():
     print(dict)
     return jsonify(dict)
 
-def classify_text(text):
-    """Classifies content categories of the provided text."""
-    client = language.LanguageServiceClient()
-
-    document = types.Document(
-        content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
-
-    categories = client.classify_text(document).categories
-
-    return categories
+@app.route("/like", methods=["POST"])
+def update_post():
+    try:
+        # create cursor into database
+        c = get_db().cursor()
+        
+        # gets data from request
+        data = request.json
+        print(data)
+        
+        # get required fields
+        url = data["url"]
+        uid = data["UID"]
+        poly_bias = data["bias"] 
+        
+        # create table if it doesn't exist
+        c.execute('''CREATE TABLE IF NOT EXISTS Likes (id INT PRIMARY KEY, url TEXT, 
+                uid INTEGER)''')
+        
+        # add like to table
+        c.execute('''INSERT INTO Likes (url, uid)
+                  VALUES(?,?)''', (url, uid))
+        
+        # get user
+        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+        num_vote = user[6]
+        num_pol = user[5]
+        
+        # update user
+        c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote+1 , uid))
+        c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote+1) , uid))
+        dict = {}
+        dict["isLiked"] = True
+        return jsonify(dict)
+    except:
+        dict = {}
+        dict["isLiked"] = False
+        return jsonify(dict)
+@app.route("/like", methods=["GET"])
+def update_get():
+    # create cursor into database
+    c = get_db().cursor()
+    
+    # gets data from request
+    data = request.json
+    print(data)
+    
+    # get required fields
+    uid = data["UID"]
+    url = data["url"]
+    
+    # get all posts that have been liked by the user
+    post = c.execute('''SELECT * FROM Likes WHERE id=? AND url=?''',(uid, url))
+    dict = {}
+    if (post is None):
+        dict["isLiked"]= False
+    else:
+        dict["isLiked"]= True
+   
+    return jsonify(dict)
+    
+@app.route("/like", methods=["DELETE"])
+def update_delete():
+    try:
+        # create cursor into database
+        c = get_db().cursor()
+        
+        # gets data from request
+        data = request.json
+        print(data)
+        
+        # get required fields
+        url = data["url"]
+        uid = data["UID"]
+        poly_bias = data["bias"]
+        
+        # remove like from table
+        c.execute('''DELETE FROM Likes WHERE url=? AND uid=?''', (url, uid))
+        
+        # get user
+        user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+        num_vote = user[6]
+        num_pol = user[5]
+        
+        # update user
+        c.execute('''UPDATE User SET num_upvoted=? WHERE id=?''', (num_vote-1 , uid))
+        c.execute('''UPDATE User SET political_preference=? WHERE id=?''', ((num_vote*num_pol+poly_bias)/(num_vote-1) , uid))
+        dict = {}
+        dict["isLiked"] = True
+        return jsonify(dict)
+    except:
+        dict = {}
+        dict["isLiked"] = False
+        return jsonify(dict)
+    
+@app.route("/user", methods=["GET"])
+def get_user():
+    # create cursor into database
+    c = get_db().cursor()
+    
+    # gets data from request
+    data = request.json
+    print(data)
+    
+    # get required fields
+    uid = data["UID"]
+    
+    # get user
+    user = c.execute('''SELECT * FROM User WHERE id=?''',(uid))
+    
+    #turn user into dictionary
+    names = ["UID","username", "password", "url" ,"categories", "politicalPreference", "numUpvoted"]
+    dict = {}
+    i=0
+    for item in user:
+        dict[names[i]] = item
+        i += 1
+    return jsonify(dict)
 
 def get_db():
     db = getattr(g, '_database', None)
