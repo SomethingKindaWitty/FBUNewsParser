@@ -334,7 +334,8 @@ def get_user():
     uid = data["UID"]
 
     # get user
-    user = c.execute('''SELECT * FROM User WHERE id= ?''',(uid,)).fetchone();
+    # user = c.execute('''SELECT * FROM User WHERE id= ?''',(uid,)).fetchone();
+    user = c.execute('SELECT * FROM User WHERE id=?', (uid)).fetchone()
 
     # saves the results of the query
     get_db().commit()
