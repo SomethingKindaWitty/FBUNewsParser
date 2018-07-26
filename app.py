@@ -333,6 +333,8 @@ def get_user():
     # get required fields
     uid = data["UID"]
 
+    print(type(uid))
+
     # get user
     # user = c.execute('''SELECT * FROM User WHERE id= ?''',(uid,)).fetchone();
     user = c.execute('SELECT * FROM User WHERE id=?', (uid,)).fetchone();
