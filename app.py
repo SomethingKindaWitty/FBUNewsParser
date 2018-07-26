@@ -281,11 +281,11 @@ def update_delete():
         # closes database access
         get_db().close()
         dict = {}
-        dict["isLiked"] = True
+        dict["isLiked"] = False
         return jsonify(dict)
     except:
         dict = {}
-        dict["isLiked"] = False
+        dict["isLiked"] = True
         return jsonify(dict)
 
 @app.route("/setaff", methods=["POST"])
