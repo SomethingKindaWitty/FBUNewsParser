@@ -353,6 +353,23 @@ def get_user():
         i += 1
     return jsonify(dict)
 
+@app.route("/comment", methods=["POST", "GET"])
+def comment():
+    if request.method == 'POST':
+        c = get_db().cursor()
+        data = request.json
+        print(data)
+        uid = data["UID"]
+        body = data["body"]
+        created_at = data["created_at"]
+        articleUrl = data["articleUrl"]
+        c.execute('''INSERT INTO Comments (uid, body, createdAt, articleUrl) VALUES(?,?,?,?)''', (uid, body, created_at, articleUrl))
+        get_db().commit()
+        return jsonify(data)
+    else:
+        return ""
+
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
