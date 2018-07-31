@@ -371,9 +371,19 @@ def comment():
         c = get_db().cursor()
         articleUrl = request.args.get('articleUrl')
         comments = c.execute('''SELECT * FROM Comments WHERE articleUrl=?''',(articleUrl,)).fetchall();
+        returnObject = []
         for comment in comments:
-            print(comment)
-        return jsonify(comments)
+            names = ["id","uid", "body", "createdAt" ,"articleUrl"]
+            dict = {}
+            i=0
+            for item in comment:
+                dict[names[i]] = item
+                i += 1
+            # find the username to add to the object given the UID
+            user = c.execute('SELECT * FROM User WHERE id=?', (dict["uid"],)).fetchone();
+            dict["username"] = user[1]
+            returnObject.append(dict)
+        return jsonify(returnObject)
 
 
 def get_db():
