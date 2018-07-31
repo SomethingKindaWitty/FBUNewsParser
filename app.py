@@ -320,6 +320,35 @@ def set_aff():
         dict["isSet"] = False
         dict["UID"] = -1
         return jsonify(dict)
+    
+@app.route("/setimage", methods=["POST"])
+def set_image():
+    try:
+        # create cursor into database
+        c = get_db().cursor()
+
+        # gets data from request
+        data = request.json
+        print(data)
+
+        # get required fields
+        uid = data["UID"]
+        image_url = data["image"]
+        
+        # update user
+        c.execute('''UPDATE User SET image=? WHERE id=?''', (image_url, uid))
+
+        # saves the results of the query
+        get_db().commit()
+        # closes database access
+        get_db().close()
+        dict = {}
+        dict["isSet"] = True
+        return jsonify(dict)
+    except:
+        dict = {}
+        dict["isSet"] = False
+        return jsonify(dict)
 
 @app.route("/user", methods=["POST"])
 def get_user():
