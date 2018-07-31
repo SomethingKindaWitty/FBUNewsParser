@@ -4,6 +4,7 @@ from newspaper import Article
 import newspaper
 import nltk
 import sqlite3
+from datetime import datetime
 
 from google.cloud import language
 from google.cloud.language import enums
@@ -361,7 +362,7 @@ def comment():
         print(data)
         uid = data["UID"]
         body = data["body"]
-        created_at = data["created_at"]
+        created_at = datetime.now().isoformat()
         articleUrl = data["articleUrl"]
         c.execute('''INSERT INTO Comments (uid, body, createdAt, articleUrl) VALUES(?,?,?,?)''', (uid, body, created_at, articleUrl))
         get_db().commit()
