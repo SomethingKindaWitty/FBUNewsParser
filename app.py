@@ -367,7 +367,12 @@ def comment():
         get_db().commit()
         return jsonify(data)
     else:
-        return ""
+        c = get_db().cursor()
+        articleUrl = request.args.get('articleUrl')
+        comments = c.execute('''SELECT * FROM Comments WHERE articleUrl=?''',(articleUrl,)).fetchall();
+        for comment in comments:
+            print(comment)
+        return jsonify(comments)
 
 
 def get_db():
