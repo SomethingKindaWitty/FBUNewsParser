@@ -49,6 +49,24 @@ def hello():
     return jsonify(returnData)
 
 
+
+@app.route("/getKeywords", methods=["POST"])
+def keywords():
+    data = request.json
+    print(data)
+    url = data["url"]
+    article = Article(url)
+    article.download()
+    article.parse()
+    article.nlp()
+
+    returnData = {
+        "keywords": article.keywords
+    }
+
+    return jsonify(returnData)
+
+
 @app.route("/sources")
 def sources():
     url = "https://newsapi.org/sources"
@@ -320,7 +338,7 @@ def set_aff():
         dict["isSet"] = False
         dict["UID"] = -1
         return jsonify(dict)
-    
+
 @app.route("/setimage", methods=["POST"])
 def set_image():
     try:
@@ -334,7 +352,7 @@ def set_image():
         # get required fields
         uid = data["UID"]
         image_url = data["image"]
-        
+
         # update user
         c.execute('''UPDATE User SET image=? WHERE id=?''', (image_url, uid))
 
