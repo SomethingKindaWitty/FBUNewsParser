@@ -401,6 +401,21 @@ def get_user():
         i += 1
     return jsonify(dict)
 
+@app.route("/getcomments", methods=["POST"])
+def get_comments():
+    c = get_db().cursor()
+    data = request.json
+    uid = data["UID"]
+
+    comments = c.execute('SELECT * FROM Comments WHERE uid=?', (uid,)).fetchall(); 
+    get_db().commit()
+    get_db().close()
+    
+    num_comments = len(comments);
+    
+    return jsonify({"num":num_comments})
+        
+
 @app.route("/comment", methods=["POST", "GET"])
 def comment():
     if request.method == 'POST':
