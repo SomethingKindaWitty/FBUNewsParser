@@ -375,7 +375,7 @@ def get_user():
     get_db().close()
 
     #turn user into dictionary
-    names = ["UID","username", "password", "url" ,"categories", "politicalPreference", "numUpvoted"]
+    names = ["UID","username", "password","categories", "url", "politicalPreference", "numUpvoted"]
     dict = {}
     i=0
     for item in user:
