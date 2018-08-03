@@ -113,23 +113,29 @@ def register():
     username = data["username"]
     password = data["password"]
 
+    #change this to return the whole user to create the user object.
     user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
-    if (user is None):
-        dict = {"UID":-1}
-        print("User doesn't exist")
+    # if (user is None):
+    #     dict = {"UID":-1}
+    #     print("User doesn't exist")
+    # else:
+    #     dict = {"UID":user[0]}
+    #     print("User exists")
+    # print(user)
+    # print(dict)
+
+    #turn user into dictionary
+    names = ["UID","username", "password","categories", "url", "politicalPreference", "numUpvoted"]
+    dict = {}
+    i=0
+    if user is None:
+        dict = {"UID": -1}
     else:
-        dict = {"UID":user[0]}
-        print("User exists")
-    print(user)
-    print(dict)
-
-    # saves the results of the query
-    get_db().commit()
-    # closes database access
-    get_db().close()
-
-    # returns the user
+        for item in user:
+            dict[names[i]] = item
+            i += 1
     return jsonify(dict)
+
 
 @app.route("/signin", methods=["POST"])
 def create():
@@ -231,30 +237,30 @@ def update_post():
         dict = {}
         dict["isLiked"] = False
         return jsonify(dict)
-    
+
 @app.route("/getlikes", methods=["POST"])
 def likes_get():
     # create cursor into database
     c = get_db().cursor()
-    
+
     # gets data from request
     data = request.json
-    
+
     # get required fields
     uid = data["UID"]
-    
+
     # get the user's likes
     likes = c.execute('''SELECT * FROM Likes WHERE uid=?''',(uid,)).fetchall();
-    
+
     list_likes = []
-    
+
     for like in likes:
         list_likes.append(like[1])
-    
+
     dict_likes = {"likes":list_likes}
-    
+
     return jsonify(dict_likes)
-        
+
 
 @app.route("/getlike", methods=["POST"])
 def update_get():
@@ -431,14 +437,14 @@ def get_comments():
     data = request.json
     uid = data["UID"]
 
-    comments = c.execute('SELECT * FROM Comments WHERE uid=?', (uid,)).fetchall(); 
+    comments = c.execute('SELECT * FROM Comments WHERE uid=?', (uid,)).fetchall();
     get_db().commit()
     get_db().close()
-    
+
     num_comments = len(comments);
-    
+
     return jsonify({"num":num_comments})
-        
+
 
 @app.route("/comment", methods=["POST", "GET"])
 def comment():
@@ -470,7 +476,7 @@ def comment():
             user = c.execute('SELECT * FROM User WHERE id=?', (dict["uid"],)).fetchone();
             dict["username"] = user[1]
             dict["profileImage"] = user[4]
-            
+
             returnObject.append(dict)
         return jsonify(returnObject)
 
