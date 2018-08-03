@@ -231,6 +231,30 @@ def update_post():
         dict = {}
         dict["isLiked"] = False
         return jsonify(dict)
+    
+@app.route("/getlikes", methods=["POST"])
+def likes_get():
+    # create cursor into database
+    c = get_db().cursor()
+    
+    # gets data from request
+    data = request.json
+    
+    # get required fields
+    uid = data["UID"]
+    
+    # get the user's likes
+    likes = c.execute('''SELECT * FROM Likes WHERE uid=?''',(uid,)).fetchall();
+    
+    list_likes = []
+    
+    for like in likes:
+        list_likes.append(like[1])
+    
+    dict_likes = {"likes":list_likes}
+    
+    return jsonify(dict_likes)
+        
 
 @app.route("/getlike", methods=["POST"])
 def update_get():
