@@ -151,6 +151,7 @@ def create():
     # gets the username from the data
     username = data["username"]
     password = data["password"]
+    poli_pref = data["bias"]
 
     # make sure table exists
     c.execute('''CREATE TABLE IF NOT EXISTS User (id INT PRIMARY KEY, username TEXT, password TEXT, image TEXT, categories TEXT, political_preference REAL, num_upvoted INTEGER)''')
@@ -162,7 +163,7 @@ def create():
         # user truly doesn't exist, sign them up
         condition = True
         c.execute('''INSERT INTO User (username, password, image,categories, political_preference, num_upvoted)
-          VALUES(?,?,?,?,?,?)''', (username, password, None, None, None, None))
+          VALUES(?,?,?,?,?,?)''', (username, password, None, None, poli_pref, None))
         user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
         print(user)
 
@@ -173,8 +174,15 @@ def create():
 
     # if the user did not already exist, sign them up
     if (condition):
-        dict = {"UID":user[0]}
+        #turn user into dictionary
+        names = ["UID","username", "password","categories", "url", "politicalPreference", "numUpvoted"]
+        dict = {}
+        i=0
+        for item in user:
+            dict[names[i]] = item
+            i += 1
         return jsonify(dict)
+    
     print("User already existed")
     dict = {"UID":-1}
     print(dict)
