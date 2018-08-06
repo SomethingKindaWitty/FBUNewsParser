@@ -182,7 +182,7 @@ def create():
             dict[names[i]] = item
             i += 1
         return jsonify(dict)
-    
+
     print("User already existed")
     dict = {"UID":-1}
     print(dict)
@@ -487,6 +487,34 @@ def comment():
 
             returnObject.append(dict)
         return jsonify(returnObject)
+
+@app.route("/userComments", methods=["GET"])
+def userComments():
+    uid = request.args.get('UID')
+    c = get_db().cursor()
+    comments = c.execute('''SELECT * FROM Comments WHERE uid=?''', (uid,)).fetchall();
+    returnObject = []
+    for comment in comments:
+        names = ["id","uid", "body", "createdAt" ,"articleUrl"]
+        dict = {}
+        i=0
+        for item in comment:
+            dict[names[i]] = item
+            i += 1
+        # find the username to add to the object given the UID
+        # find the user profile image to add to the object given the UID
+        user = c.execute('SELECT * FROM User WHERE id=?', (dict["uid"],)).fetchone();
+        dict["username"] = user[1]
+        dict["profileImage"] = user[4]
+        # find the title and description given an articleurl.
+        article = Article(dict["articleUrl"])
+        article.download()
+        article.parse()
+        dict["mediaImage"] = article.top_image
+        dict["articleTitle"] = article.title
+        returnObject.append(dict)
+    return jsonify(returnObject)
+
 
 
 def get_db():
