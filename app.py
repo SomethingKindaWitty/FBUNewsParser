@@ -163,7 +163,7 @@ def create():
         # user truly doesn't exist, sign them up
         condition = True
         c.execute('''INSERT INTO User (username, password, image,categories, political_preference, num_upvoted)
-          VALUES(?,?,?,?,?,?)''', (username, password, None, None, poli_pref, None))
+          VALUES(?,?,?,?,?,?)''', (username, password, None, None, poli_pref, 10))
         user = c.execute('SELECT * FROM User WHERE username=? AND password=?', (username, password)).fetchone();
         print(user)
 
