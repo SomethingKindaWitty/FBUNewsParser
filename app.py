@@ -269,6 +269,28 @@ def likes_get():
 
     return jsonify(dict_likes)
 
+@app.route("/getLikesDetails", methods=["POST"])
+def likes_get_details():
+    c = get_db().cursor()
+
+    data = request.json
+    uid = data["UID"]
+
+    likes = c.execute('''SELECT * FROM Likes WHERE uid=?''',(uid,)).fetchall();
+
+    list_likes = []
+    for like in likes:
+        dict = {}
+        dict["url"] = like[1]
+        article = Article(like[1])
+        article.download()
+        article.parse()
+        dict["mediaImage"] = article.top_image
+        dict["articleTitle"] = article.title
+        list_likes.append(dict)
+    return jsonify(list_likes)
+
+
 
 @app.route("/getlike", methods=["POST"])
 def update_get():
