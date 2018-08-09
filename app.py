@@ -30,6 +30,8 @@ def hello():
     article.parse()
     article.nlp()
     articleText = article.text
+    
+    finalArticleText = split(articleText)
 
     uncleanedcategories = classify_text(articleText)
     mostLikely = uncleanedcategories[0].name
@@ -37,7 +39,7 @@ def hello():
     mostLikely = mostLikely[index:]
 
     returnData = {
-        "text": articleText,
+        "text": finalArticleText,
         "keywords": article.keywords,
         "category": mostLikely
     }
@@ -48,7 +50,18 @@ def hello():
 
     return jsonify(returnData)
 
-
+# parses out extremely long image captions
+def split(body):
+    list_strings = body.split("\n\n")
+    list_final_strings = []
+    for string in list_strings:
+        if (len(string) <= 400):
+            list_final_strings.append(string)
+    final_string = ""
+    for string in list_final_strings:
+        final_string += string
+    
+    return final_string
 
 @app.route("/getKeywords", methods=["POST"])
 def keywords():
