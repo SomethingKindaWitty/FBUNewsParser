@@ -59,7 +59,7 @@ def split(body):
             list_final_strings.append(string)
     final_string = ""
     for string in list_final_strings:
-        final_string += string
+        final_string += string + "\n\n"
     
     return final_string
 
