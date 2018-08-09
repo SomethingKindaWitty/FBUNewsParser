@@ -515,9 +515,9 @@ def userComments():
     uid = request.args.get('UID')
     c = get_db().cursor()
     comments = c.execute('''SELECT * FROM Comments WHERE uid=?''', (uid,)).fetchall();
+    names = ["id","uid", "body", "createdAt" ,"articleUrl"]
     returnObject = []
     for comment in comments:
-        names = ["id","uid", "body", "createdAt" ,"articleUrl"]
         dict = {}
         i=0
         for item in comment:
