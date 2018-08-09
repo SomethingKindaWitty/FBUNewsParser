@@ -523,11 +523,6 @@ def userComments():
         for item in comment:
             dict[names[i]] = item
             i += 1
-        # find the username to add to the object given the UID
-        # find the user profile image to add to the object given the UID
-        user = c.execute('SELECT * FROM User WHERE id=?', (dict["uid"],)).fetchone();
-        dict["username"] = user[1]
-        dict["profileImage"] = user[4]
         # find the title and description given an articleurl.
         article = Article(dict["articleUrl"])
         article.download()
