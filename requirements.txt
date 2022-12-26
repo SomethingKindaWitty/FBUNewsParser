@@ -35,4 +35,4 @@ rsa==3.4.2
 six==1.11.0
 tldextract==2.2.0
 urllib3==1.23
-wheel==0.26.0
+wheel==0.38.1
